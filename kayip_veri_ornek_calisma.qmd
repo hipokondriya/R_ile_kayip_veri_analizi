@@ -1,0 +1,178 @@
+---
+title: "KAYIP VERİ ANALİZİ ÖRNEK ÇALIŞMA"
+author: "Aylın AKTAŞ"
+format: html
+editor: visual
+editor_options: 
+  chunk_output_type: console
+---
+
+# ***KAYIP VERİ ANALİZİ ÖRNEK ÇALIŞMA***
+
+##### [İlgılı veri Üzerıne Açıklama]{.underlıne}
+
+İstanbul büyük şehır beledıyesı veri portalı üzerınden 'VDYM İlçe Bazında Hanelerın Haftasonu aktivite Tercıhlerı' çalışmasına ulaşılmıştır. ılgılı sıteye [buradan](https://data.ıbb.gov.tr/dataset/vdym-ılce-bazında-hanelerın-haftasonu-aktivite-tercıhlerı) ulaşabılırsınız.
+
+### ***1. Veri Setını Yukleyelım***
+
+Bağlantı üzerinden indirdiğimiz xlsx dosyasını 'readxl' kütüphanesi kullanarak çalışmaya yüklenir.
+
+'readxl' kütüphanesi excel dosyalarını okumak için kullanılır. Kütüphane '.xls' ve '.xlsx' dosya bağlantılarını destekler.
+
+```{r veri}
+
+library(readxl)
+
+aktivite <- read_excel("C:/Users/murat/Downloads/5-vdym-ilce-baznda-hanelerin-haftasonu-aktivite-tercihleri.xlsx")
+
+```
+
+### ***2. Veri Setini Inceleyelim***
+
+'str' kodu verinin yapısını ve içeriğini gösterir.
+
+```{r veri setı ınceleme}
+
+str(aktivite)
+
+```
+
+##### ***2.1 Kayıp veri kontrolu***
+
+'is.na' komutu verimizdeki kayıp/eksik değerlerini kontrol eder. Eğer kayıp/eksik veri var ise 'sum' kodu ile toplamları alınır.
+
+```{r Kayıp veri }
+
+sum(is.na(aktivite))
+```
+
+### ***3. Rastgele Kayıp Veri Oluşturma***
+
+Veriye belirli bir yüzde oranında rastgele kayıp değer eklemek için ;
+
+-   Rastgele sayı üreten 'set.seed' komutu eklenir
+
+-   Verinin satır sayısını 'nrow' komutu ile hesaplayarak "satir_sayisi" değişkenine atanır.
+
+-   Veri setine, satır sayısının %10 'u kadar eklenecek kayıp veri değeri hesaplanır. 'round' komutu oluşabilecek ondalık değer için yuvarlama yapar
+
+-   Toplam satır sayısı ( 1 : satir_sayisi ) arasında rastgele seçilen satır indislerini belirler. 'sample' komutu rastgele seçim yapar
+
+-   Verinin toplam sütun sayısı arasında rastgele seçilen sütun indislerini belirler
+
+-   Veri setinde seçilen satır ve sütunlara "NA" değerimni atar, kayıp veri oluşturulur.
+
+```{r Kayıp veri olusturma}
+
+set.seed(123)
+
+satir_sayisi <- nrow(aktivite)
+
+eklenecek_NA_degeri <- round(satir_sayisi * 0.1)  
+
+NA_iceren_satir<- sample(1:satir_sayisi, eklenecek_NA_degeri, replace = TRUE)
+
+NA_iceren_sutun <- sample(1:ncol(aktivite), eklenecek_NA_degeri, replace = TRUE)
+
+aktivite[NA_iceren_satir, NA_iceren_sutun] <- NA
+
+```
+
+##### ***3.1 Kayıp veri kontrolu***
+
+'is.na' komutu verimizdeki kayıp/eksik değerlerini kontrol eder. Eğer kayıp/eksik veri var ise 'sum' kodu ile toplamları alınır.
+
+```{r kayıp veri}
+
+sum(is.na(aktivite))
+```
+
+###### ***3.1.1 Kayıp veri setini inceleme***
+
+Veri tekrar incelenir. (kayıp verileri görebilirsiniz)
+
+```{r veri }
+
+str(aktivite)
+```
+
+### ***4. Kayıp Veri Gorsellestirme***
+
+Kütüphaneden 'naniar' paketini yüklenir. Paket kayıp verileri görselleştirmek, doldurmak ve analiz etmek için çeşitli işlevler sağlar.
+
+-   'data' komutu veri setini yükler.
+-   'vis_miss' fonksiyonu, kayıp verileri görselleştirmek için kullanılır.
+-   'gg_miss_var' fonksiyonu, her sütunun kayıp değerlerini görselleştirmek için kullanılır.Kayıp değerleri yüzdelik dilim şeklinde gösterir.
+
+```{r eksık veri analızı}
+
+library(naniar)
+
+data("aktivite")
+
+naniar::vis_miss(aktivite)
+
+naniar::gg_miss_var(aktivite)
+
+```
+
+### ***5. Kayıp Veri Doldurma***
+
+Kayıp Veri doldurmak çeşitli yöntemler kullanılır. Yaygın olarak kullanılan bazı veri doldurma yöntemleri:
+
+-   Ortalama, Medyan veya Mod Değerleri Kullanma ,
+
+-   En Yakın Komşu (K-NN) İmputasyon ,
+
+-   Regresyon Analizi
+
+Kayıp veri hakkında daha fazla bilgiye [buradan](https://tez.yok.gov.tr/UlusalTezMerkezi/tezSorguSonucYeni.jsp) ulaşabilirsiniz.
+
+##### ***5.1 Ortalama ile Kayıp veri doldurma***
+
+Kayıp veri doldurma işlemleri için kullanılan 'imputeTS' kütüphanesini yüklenir.
+
+'data' komutu ile veri seti yüklenir
+
+'imputeTS::na_mean()' fonksiyonu, kayıp verileri veri setindeki değişkenin ortalama değeriyle doldurur.
+
+```{r kayıp veri ortalama}
+
+library(imputeTS)
+
+data("aktivite")
+
+aktivite_tamamlanmıs_veri_1 <- imputeTS::na_mean(aktivite)
+
+sum(is.na(aktivite_tamamlanmıs_veri_1))
+```
+
+##### ***5.2 Medyan ile Kayıp veri doldurma***
+
+'imputeTS::na_mean(..., option="median")' fonksiyonu, kayıp verileri veri setindeki değişkenin medyan değeriyle doldurur.
+
+```{r kayıp veri medyan}
+
+library(imputeTS)
+
+data("aktivite")
+
+aktivite_tamamlanmıs_veri_2 <- imputeTS::na_mean(aktivite, option="median")
+
+sum(is.na(aktivite_tamamlanmıs_veri_2))
+```
+
+##### ***5.3 Mod ile Kayıp veri doldurma***
+
+'imputeTS::na_mean(..., option="mode")' fonksiyonu, kayıp verileri veri setindeki değişkenin mod değeriyle doldurur.
+
+```{r kayıp veri mod}
+
+library(imputeTS)
+
+data("aktivite")
+
+aktivite_tamamlanmıs_veri_3 <- imputeTS::na_mean(aktivite, option="mode")
+
+sum(is.na(aktivite_tamamlanmıs_veri_3))
+```
